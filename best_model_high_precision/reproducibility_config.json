@@ -1,0 +1,67 @@
+{
+  "RANDOM_SEED": 42,
+  "PYTORCH_DETERMINISTIC": true,
+  "CUDNN_BENCHMARK": false,
+  "MODEL_ARCHITECTURE": {
+    "num_features": 58,
+    "num_classes": 6,
+    "d_model": 64,
+    "n_heads": 4,
+    "depth": 2,
+    "dropout": 0.3
+  },
+  "TRAINING_CONFIG": {
+    "batch_size": 256,
+    "lr": 0.0001,
+    "weight_decay": 0.0001,
+    "epochs": 20,
+    "optimizer": "AdamW",
+    "loss_fn": "CrossEntropyLoss",
+    "label_smoothing": 0.1
+  },
+  "PREPROCESSING": {
+    "train_test_split": 0.8,
+    "scaler_type": "StandardScaler",
+    "scaler_fit_on": "train_only",
+    "removed_features": "zero_variance_features",
+    "smote_enabled": true,
+    "smote_k_neighbors": 5
+  },
+  "PRIOR_ADJUSTMENT": {
+    "enabled": true,
+    "alpha": 0.8,
+    "source_column": "filtered_total"
+  },
+  "LABEL_MAPPING": {
+    "current_to_original": {
+      "0": 0,
+      "1": 2,
+      "2": 3,
+      "3": 4,
+      "4": 5,
+      "5": 6
+    },
+    "original_to_current": {
+      "0": 0,
+      "2": 1,
+      "3": 2,
+      "4": 3,
+      "5": 4,
+      "6": 5
+    },
+    "attack_names": {
+      "0": "Benign",
+      "1": "DDoS",
+      "2": "DoS GoldenEye (PRIORITY)",
+      "3": "DoS Hulk",
+      "4": "DoS Slowhttptest",
+      "5": "DoS slowloris"
+    }
+  },
+  "TEST_METRICS": {
+    "accuracy": 0.865265074850232,
+    "precision": 0.9544737020167429,
+    "recall": 0.865265074850232,
+    "f1_score": 0.8969362164282179
+  }
+}
