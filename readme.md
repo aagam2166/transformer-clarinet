@@ -40,7 +40,7 @@ Download the dataset file from the link below:
 
 
 
-👉 \*\*Dataset Link:\*\* (PASTE YOUR GOOGLE DRIVE LINK HERE)
+👉 \*\*Dataset Link:\*\* https://drive.google.com/file/d/1oHnlFd44RHHOPud9DoWAEtxi7cMrZMNc/view?usp=sharing
 
 
 

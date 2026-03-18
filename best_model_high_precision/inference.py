@@ -98,7 +98,44 @@ def load_model(model_dir="."):
     model.load_state_dict(torch.load(Path(model_dir) / "model_weights.pt", map_location=device))
     model.eval()
 
-    return model, scaler, features, label_mapping, device
+    return model, scaler, features, label_mapping, config, device
+
+# ============ PRIOR ADJUSTMENT ============
+def get_log_prior_adjustment(config, device, model_dir="."):
+    """Get log-prior adjustment tensor for predictions."""
+    if not config.get("PRIOR_ADJUSTMENT", {}).get("enabled", False):
+        return None
+
+    # Try to load from parent directory first (for GitHub compatibility)
+    label_count_paths = [
+        Path(model_dir).parent / "label_count_tracker.csv",
+        Path(model_dir) / "label_count_tracker.csv",
+        Path("label_count_tracker.csv")
+    ]
+
+    counts_df = None
+    for path in label_count_paths:
+        if path.exists():
+            counts_df = pd.read_csv(path).sort_values("current_label")
+            break
+
+    if counts_df is None:
+        print("⚠ WARNING: label_count_tracker.csv not found. Skipping prior adjustment.")
+        return None
+
+    source_col = config["PRIOR_ADJUSTMENT"].get("source_column", "filtered_total")
+    if source_col not in counts_df.columns:
+        print(f"⚠ WARNING: '{source_col}' not found. Skipping prior adjustment.")
+        return None
+
+    counts = counts_df[source_col].astype(float).to_numpy()
+    counts = counts + 1.0  # Laplace smoothing
+    priors = counts / counts.sum()
+
+    alpha = float(config["PRIOR_ADJUSTMENT"].get("alpha", 1.0))
+    adjustment = alpha * np.log(priors)
+
+    return torch.tensor(adjustment, dtype=torch.float32, device=device)
 
 # ============ INFERENCE ============
 def predict(X, model_dir="."):
@@ -106,7 +143,7 @@ def predict(X, model_dir="."):
     X: pandas DataFrame or numpy array with feature columns
     Returns: class predictions and attack names
     """
-    model, scaler, features, label_mapping, device = load_model(model_dir)
+    model, scaler, features, label_mapping, config, device = load_model(model_dir)
 
     # Convert to DataFrame if needed
     if isinstance(X, np.ndarray):
@@ -122,6 +159,12 @@ def predict(X, model_dir="."):
     # Predict
     with torch.no_grad():
         outputs = model(X_tensor)
+        
+        # Apply prior adjustment if enabled
+        prior_adjustment = get_log_prior_adjustment(config, device, model_dir)
+        if prior_adjustment is not None:
+            outputs = outputs + prior_adjustment
+        
         preds = outputs.argmax(1).cpu().numpy()
 
     # Map to attack names
@@ -133,3 +176,6 @@ if __name__ == "__main__":
     print("Model loaded successfully!")
     print(f"Device: {torch.device('cuda' if torch.cuda.is_available() else 'cpu')}")
     print(f"Seed: {RANDOM_SEED} (for reproducibility)")
+    print("\n✓ Model ready for inference with prior adjustment enabled!")
+    print("  - Uses log-prior adjustment for class imbalance")
+    print("  - Alpha: 0.8, Source: filtered_total")
