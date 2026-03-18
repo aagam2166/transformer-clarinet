@@ -1,148 +1,140 @@
-\# Transformer-Based Intrusion Detection Model
+# Transformer-Based Intrusion Detection Model
 
+A pre-trained Transformer model for network intrusion detection. Use the saved model for inference on new data.
 
-
-This repository contains the implementation of a Transformer-based deep learning model for network intrusion detection.
-
-
-
-Due to large file sizes, most datasets and intermediate artifacts are \*\*not included in this repository\*\*.
-
-
+⚠️ **IMPORTANT:** Install dependencies first! See [Setup & Installation](#-setup--installation) below.
 
 ---
 
-
-
-\## 📁 Required Files
-
-
-
-To run the project successfully, you only need the following two files in the \*\*same project folder\*\*:
-
-
-
-\* `transformer\_clean.ipynb`
-
-\* `df\_cleaned.csv`
-
-
-
----
-
-
-
-\## ⬇️ Dataset Download
-
-
-
-Download the dataset file from the link below:
-
-
-
-👉 \*\*Dataset Link:\*\* https://drive.google.com/file/d/1oHnlFd44RHHOPud9DoWAEtxi7cMrZMNc/view?usp=sharing
-
-
-
-After downloading:
-
-
-
-1\. Place `df\_cleaned.csv` in the \*\*same folder\*\* as `transformer\_clean.ipynb`
-
-2\. Do not rename the file
-
-3\. Ensure both files are at the root level of the project directory
-
-
-
-Example structure:
-
-
+## 📁 What's Included
 
 ```
+best_model_high_precision/
+  ├── model_weights.pt          (Pre-trained model)
+  ├── scaler.joblib             (Feature scaler)
+  ├── label_mapping.json        (Attack class names)
+  ├── features.json             (Feature names)
+  ├── reproducibility_config.json (Model config)
+  └── inference.py              (Reference code)
 
-Transformer\_Project/
-
-│
-
-├── transformer\_clean.ipynb
-
-├── df\_cleaned.csv
-
-└── README.md
-
+test_model_reproduction.ipynb   (How to use the model)
 ```
 
-
-
 ---
 
+## 🚀 Quick Start
 
-
-\## ▶️ How to Run the Project
-
-
-
-1\. Open `transformer\_clean.ipynb` using Jupyter Notebook / JupyterLab / VS Code
-
-2\. Run all cells sequentially
-
-3\. The notebook will handle preprocessing, training, and evaluation
-
-
-
----
-
-
-
-\## ⚙️ Requirements
-
-
-
-Install required Python libraries before running:
-
-
-
+### For Inference Only (No Dataset Needed)
+If you just want to use the pre-trained model:
+```python
+# See Step 1-3 below - works without df_cleaned.csv
 ```
 
-pip install numpy pandas scikit-learn tensorflow matplotlib seaborn
+### For Full Testing (Requires Dataset)
+If you want to test the model on test data:
+1. Download `df_cleaned.csv` from: https://drive.google.com/file/d/1oHnlFd44RHHOPud9DoWAEtxi7cMrZMNc/view?usp=sharing
+2. Place it in the project root folder
+3. Run the notebook
 
+### Step 1: Load the Model
+```python
+import torch
+import joblib
+import json
+
+model_dir = 'best_model_high_precision'
+device = 'cpu'  # or 'cuda' for GPU
+
+# Load model weights
+model.load_state_dict(torch.load(f'{model_dir}/model_weights.pt', map_location=device))
+
+# Load preprocessor
+scaler = joblib.load(f'{model_dir}/scaler.joblib')
+
+# Load class names
+with open(f'{model_dir}/label_mapping.json') as f:
+    labels = json.load(f)
 ```
 
+### Step 2: Prepare Data
+```python
+# Scale your input features
+X_scaled = scaler.transform(X_raw)
 
+# Convert to tensor
+X_tensor = torch.tensor(X_scaled, dtype=torch.float32).to(device)
+```
 
-(Adjust if your notebook uses additional libraries.)
+### Step 3: Run Inference
+```python
+model.eval()
+with torch.no_grad():
+    logits = model(X_tensor)
+    predictions = torch.argmax(logits, dim=1).cpu().numpy()
 
-
+# Get attack names
+attack_names = labels['attack_names']
+predicted_labels = [attack_names[str(int(p))] for p in predictions]
+```
 
 ---
 
+## 📋 Setup & Installation
 
+### Prerequisites
+- **Python:** 3.8 or higher
+- **pip:** Package manager (comes with Python)
 
-\## 📌 Notes
+### Step 1: Install Dependencies
+Open your terminal/command prompt and run:
 
+```bash
+pip install numpy pandas scikit-learn torch joblib
+```
 
+**Or use the requirements file:**
+```bash
+pip install -r requirements.txt
+```
 
-\* Large datasets are hosted externally to keep the repository lightweight and easy to clone
+### Step 2: Verify Installation
+```bash
+python -c "import torch; import joblib; import pandas; print('✓ All dependencies installed')"
+```
 
-\* Only the cleaned dataset (`df\_cleaned.csv`) is required for execution
-
-\* Generated model artifacts and temporary files are intentionally excluded
-
-
+### Step 3: Run the Model
+Open `test_model_reproduction.ipynb` in Jupyter/VS Code and run all cells
 
 ---
 
+## 📊 Model Info
 
+- **Type:** Tabular Transformer
+- **Parameters:** 122K
+- **Classes:** 6 attack types (Benign, DDoS, DoS GoldenEye, DoS Hulk, DoS Slowhttptest, DoS slowloris)
+- **Accuracy:** 94.52% on test set
+- **Input Features:** 58 network features
 
-\## 👤 Author
+---
 
+## ⚠️ Common Issues
 
+| Issue | Solution |
+|-------|----------|
+| `ModuleNotFoundError: No module named 'torch'` | Run `pip install torch` |
+| `ModuleNotFoundError: No module named 'joblib'` | Run `pip install joblib` |
+| `ModuleNotFoundError: No module named 'sklearn'` | Run `pip install scikit-learn` |
+| CUDA/GPU issues (optional) | Use CPU: Change `device='cuda'` to `device='cpu'` |
 
-Aagam Shah
+---
 
-Transformer-based Intrusion Detection Study Project
+## 🔍 See Also
+
+- `test_model_reproduction.ipynb` - Step-by-step inference example
+- `best_model_high_precision/inference.py` - Reference implementation
+
+---
+
 
 
 
